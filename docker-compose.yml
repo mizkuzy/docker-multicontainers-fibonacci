@@ -1,51 +1,30 @@
 services:
-  postgres:
-    image: postgres:latest
-    environment:
-      - POSTGRES_PASSWORD=postgres_password
-  redis:
-    image: redis:latest
-  backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile.dev
-    volumes:
-      - /app/node_modules
-      - ./server:/app
-    environment:
-      - PG_HOST=postgres
-      - PG_PORT=5432
-      - PG_USER=postgres
-      - PG_PASSWORD=postgres_password
-      - PG_DATABASE=postgres
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
   frontend:
-    build:
-      context: ./client
-      dockerfile: Dockerfile.dev
-    volumes:
-      - /app/node_modules
-      - ./client:/app
+    image: "mizkuzy/multi-client"
+    mem_limit: 128m
+    hostname: frontend
+  backend:
+    image: "mizkuzy/multi-server"
+    mem_limit: 128m
+    hostname: backend
     environment:
-      - WDS_SOCKET_PORT=0
+      - REDIS_HOST=$REDIS_HOST
+      - REDIS_PORT=$REDIS_PORT
+      - PG_HOST=$PG_HOST
+      - PG_PORT=$PG_PORT
+      - PG_USER=$PG_USER
+      - PG_PASSWORD=$PG_PASSWORD
+      - PG_DATABASE=$PG_DATABASE
   worker:
-    build:
-      context: ./worker
-      dockerfile: Dockerfile.dev
-    volumes:
-      - /app/node_modules
-      - ./worker:/app
+    image: "mizkuzy/multi-worker"
+    mem_limit: 128m
+    hostname: worker
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-  nginx-server:
-    restart: always
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile.dev
-    depends_on:
-      - backend
-      - frontend
+      - REDIS_HOST=$REDIS_HOST
+      - REDIS_PORT=$REDIS_PORT
+  nginx:
+    image: "mizkuzy/multi-nginx"
+    mem_limit: 128m
+    hostname: nginx
     ports:
-      - "3050:80"
+      - "80:80"
